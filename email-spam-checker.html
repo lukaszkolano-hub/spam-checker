@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Anti-Spam QA</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0f0f13;
+    --surface: #17171e;
+    --surface2: #1e1e28;
+    --border: #2a2a38;
+    --accent: #e8ff47;
+    --accent2: #ff6b47;
+    --accent3: #47b8ff;
+    --text: #e8e8f0;
+    --text-muted: #7a7a90;
+    --low: #47ff9a;
+    --medium: #ffb347;
+    --high: #ff4747;
+    --low-bg: rgba(71,255,154,0.08);
+    --medium-bg: rgba(255,179,71,0.08);
+    --high-bg: rgba(255,71,71,0.08);
+    --low-border: rgba(71,255,154,0.25);
+    --medium-border: rgba(255,179,71,0.25);
+    --high-border: rgba(255,71,71,0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 20px;
+  }
+
+  .app {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .header-left h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: clamp(20px, 3vw, 28px);
+    letter-spacing: -0.5px;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+
+  .header-left p {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-top: 6px;
+    font-weight: 300;
+  }
+
+  .badge-version {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    margin-top: 4px;
+  }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  @media (max-width: 720px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .panel-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .char-count {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .editor-area {
+    position: relative;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 260px;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: vertical;
+    padding: 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    position: relative;
+    z-index: 2;
+  }
+
+  .highlight-layer {
+    position: absolute;
+    inset: 0;
+    padding: 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    pointer-events: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    z-index: 1;
+    color: transparent;
+  }
+
+  .highlight-layer mark {
+    border-radius: 3px;
+    padding: 1px 2px;
+  }
+
+  mark.level-low { background: rgba(71,255,154,0.22); color: transparent; }
+  mark.level-medium { background: rgba(255,179,71,0.28); color: transparent; }
+  mark.level-high { background: rgba(255,71,71,0.28); color: transparent; }
+
+  textarea::placeholder { color: var(--text-muted); font-style: italic; }
+
+  .actions-row {
+    display: flex;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  button {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 9px 18px;
+    transition: all 0.15s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0f0f13;
+    flex: 1;
+  }
+  .btn-primary:hover { background: #d4eb30; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .btn-ghost:hover { border-color: var(--text-muted); color: var(--text); }
+
+  /* Score panel */
+  .score-display {
+    padding: 24px 20px 20px;
+    text-align: center;
+    position: relative;
+  }
+
+  .score-ring {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 14px;
+    position: relative;
+  }
+
+  .score-ring svg {
+    transform: rotate(-90deg);
+    width: 100px;
+    height: 100px;
+  }
+
+  .score-ring circle {
+    fill: none;
+    stroke-width: 7;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.4s;
+  }
+
+  .ring-bg { stroke: var(--surface2); }
+  .ring-fill {
+    stroke-dasharray: 251.2;
+    stroke-dashoffset: 251.2;
+  }
+
+  .score-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .score-number {
+    font-family: 'Space Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .score-max {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .risk-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 5px 14px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-top: 8px;
+  }
+
+  .risk-none { background: var(--surface2); color: var(--text-muted); }
+  .risk-low { background: var(--low-bg); color: var(--low); border: 1px solid var(--low-border); }
+  .risk-medium { background: var(--medium-bg); color: var(--medium); border: 1px solid var(--medium-border); }
+  .risk-high { background: var(--high-bg); color: var(--high); border: 1px solid var(--high-border); }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-box {
+    background: var(--surface);
+    padding: 14px 12px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 3px;
+  }
+
+  /* Hits list */
+  .hits-section {
+    padding: 16px;
+  }
+
+  .hits-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .hit-item {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-left: 3px solid transparent;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hit-item.level-low { border-color: var(--low); }
+  .hit-item.level-medium { border-color: var(--medium); }
+  .hit-item.level-high { border-color: var(--high); }
+
+  .hit-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    gap: 8px;
+  }
+
+  .hit-phrase {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .hit-badge {
+    font-size: 9px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+
+  .hit-badge.level-low { background: var(--low-bg); color: var(--low); }
+  .hit-badge.level-medium { background: var(--medium-bg); color: var(--medium); }
+  .hit-badge.level-high { background: var(--high-bg); color: var(--high); }
+
+  .hit-reason {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  .hit-alternatives {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .alt-tag {
+    font-size: 11px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--accent3);
+    padding: 2px 9px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .alt-tag:hover {
+    background: rgba(71,184,255,0.1);
+    border-color: var(--accent3);
+  }
+
+  .alt-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-style: italic;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 30px 16px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .empty-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+    opacity: 0.5;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 12px;
+    padding: 10px 20px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .dot-low { background: var(--low); }
+  .dot-medium { background: var(--medium); }
+  .dot-high { background: var(--high); }
+
+  .no-results-msg {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    display: none;
+  }
+
+  .score-comment {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 0 20px 16px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .hits-empty {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-left">
+      <h1>📨 Email Anti-Spam QA</h1>
+      <p>Weryfikuj treść maili przed wysyłką — wykrywanie fraz spamowych i propozycje zamienników</p>
+    </div>
+    <div class="badge-version">v1.0 · PL</div>
+  </header>
+
+  <div class="main-grid">
+    <!-- LEFT: Editor -->
+    <div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Treść e-maila</span>
+          <span class="char-count" id="charCount">0 znaków</span>
+        </div>
+        <div class="editor-area">
+          <div class="highlight-layer" id="highlightLayer" aria-hidden="true"></div>
+          <textarea
+            id="emailInput"
+            placeholder="Wklej lub wpisz treść e-maila (temat + treść)..."
+            spellcheck="false"
+          ></textarea>
+        </div>
+        <div class="actions-row">
+          <button class="btn-primary" id="analyzeBtn">Analizuj →</button>
+          <button class="btn-ghost" id="clearBtn">Wyczyść</button>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot dot-low"></div> Niski risk</div>
+          <div class="legend-item"><div class="legend-dot dot-medium"></div> Średni risk</div>
+          <div class="legend-item"><div class="legend-dot dot-high"></div> Wysoki risk</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+
+      <!-- Score -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Spam Score</span>
+        </div>
+        <div class="score-display">
+          <div class="score-ring">
+            <svg viewBox="0 0 100 100">
+              <circle class="ring-bg" cx="50" cy="50" r="40"/>
+              <circle class="ring-fill" id="ringFill" cx="50" cy="50" r="40" stroke="#7a7a90"/>
+            </svg>
+            <div class="score-inner">
+              <span class="score-number" id="scoreNumber">—</span>
+              <span class="score-max" id="scoreMax"></span>
+            </div>
+          </div>
+          <div id="riskLabel" class="risk-label risk-none">Brak analizy</div>
+        </div>
+        <p class="score-comment" id="scoreComment">Wklej treść e-maila i kliknij „Analizuj".</p>
+        <div class="stats-row">
+          <div class="stat-box">
+            <div class="stat-value" id="statHigh" style="color: var(--high)">0</div>
+            <div class="stat-label">Wysoki</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statMedium" style="color: var(--medium)">0</div>
+            <div class="stat-label">Średni</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statLow" style="color: var(--low)">0</div>
+            <div class="stat-label">Niski</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hits -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Wykryte frazy</span>
+        </div>
+        <div class="hits-section" id="hitsSection">
+          <div class="hits-empty" id="hitsEmpty">Uruchom analizę, aby zobaczyć wyniki.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Spam dictionary ───────────────────────────────────────────────────────────
+const SPAM_DICT = [
+  // HIGH RISK
+  { phrase: "darmowy", level: "high", reason: "Słowo \"darmowy\" to klasyczny trigger spamowy — filtry e-mail traktują je jako sygnał oferty zbyt dobrej, by była prawdziwa.", alts: ["bezpłatny", "w cenie 0 zł", "bez dodatkowych opłat"] },
+  { phrase: "gratis", level: "high", reason: "\"Gratis\" silnie kojarzy się z masową reklamą i jest jedną z najczęściej flagowanych fraz.", alts: ["w prezencie", "w komplecie", "bez dopłat"] },
+  { phrase: "100% darmowe", level: "high", reason: "Połączenie liczby procentowej z \"darmowe\" to podwójny sygnał spamowy.", alts: ["bez żadnych opłat", "całkowicie bezpłatne"] },
+  { phrase: "100% gratis", level: "high", reason: "Klasyczna fraza z reklam, silnie wykrywana przez filtry antyspamowe.", alts: ["bez dodatkowych kosztów"] },
+  { phrase: "100 procent", level: "high", reason: "Obietnica absolutności budzi nieufność filtrów i odbiorców.", alts: ["sprawdzony", "potwierdzony badaniami", "udokumentowany"] },
+  { phrase: "tylko dziś", level: "high", reason: "Sztuczna pilność to klasyczny manipulacyjny trigger spamowy.", alts: ["do końca tygodnia", "przez ograniczony czas", "w tym miesiącu"] },
+  { phrase: "ostatnia szansa", level: "high", reason: "Presja czasu — jeden z najczęściej wykrywanych wzorców spamowych.", alts: ["wkrótce kończymy", "zanim zapasy się wyczerpią"] },
+  { phrase: "pilne", level: "high", reason: "Fraza wywoływana w nagłówkach spamowych do wywołania paniki.", alts: ["ważna informacja", "przypomnienie"] },
+  { phrase: "wygraj", level: "high", reason: "Słowa o wygranej są bezpośrednio powiązane z oszustwami loteryjnymi.", alts: ["weź udział", "skorzystaj z szansy", "zdobądź"] },
+  { phrase: "wygrana", level: "high", reason: "Identyczne skojarzenie co „wygraj" — natychmiast flagowane.", alts: ["nagroda", "wyróżnienie", "benefit"] },
+  { phrase: "milion", level: "high", reason: "Wielkie liczby w treści maila to klasyczny sygnał phishingu i scamów.", alts: ["znaczące oszczędności", "wymierne korzyści"] },
+  { phrase: "miliony", level: "high", reason: "Jak wyżej — hiperbola finansowa jest silnie wykrywana.", alts: ["tysiące klientów", "szeroka społeczność"] },
+  { phrase: "bogaty", level: "high", reason: "Obietnica wzbogacenia to jeden z najstarszych wzorców spamowych.", alts: ["finansowo stabilny", "niezależny finansowo"] },
+  { phrase: "łatwe pieniądze", level: "high", reason: "Dosłownie definicja scamu — filtry reagują natychmiastowo.", alts: ["efektywne oszczędzanie", "optymalizacja budżetu"] },
+  { phrase: "szybka gotówka", level: "high", reason: "\"Szybka gotówka\" to sygnał pożyczkowych scamów.", alts: ["szybki przelew", "sprawna wypłata"] },
+  { phrase: "instant", level: "high", reason: "Angielskie słowo w polskim tekście może zapalać filtry jako phishing.", alts: ["natychmiast", "od razu", "błyskawicznie"] },
+  { phrase: "natychmiastowa wypłata", level: "high", reason: "Połączenie pilności i pieniędzy — podwójny alarm spamowy.", alts: ["szybka realizacja", "płatność w ciągu 24h"] },
+  { phrase: "pewny zysk", level: "high", reason: "Gwarancja zysku to czerwona flaga zarówno dla filtrów jak i compliance.", alts: ["historycznie stabilny zwrot", "sprawdzona strategia"] },
+  { phrase: "zero kosztów", level: "high", reason: "Wariant \"gratis\" — silnie kojarzone z przynętami spamowymi.", alts: ["bez ukrytych opłat", "przejrysty cennik"] },
+  { phrase: "ryzyko 0", level: "high", reason: "Obietnica zerowego ryzyka to niemożliwa do spełnienia i wykrywana przez filtry.", alts: ["minimalne ryzyko", "z gwarancją satysfakcji"] },
+  { phrase: "bez ryzyka", level: "high", reason: "Jak wyżej — każda gwarancja braku ryzyka jest flagowana.", alts: ["z możliwością rezygnacji", "testuj bez zobowiązań przez 14 dni"] },
+  { phrase: "cash", level: "high", reason: "Angielskie słowo finansowe w polskim tekście budzi podejrzenia.", alts: ["gotówka", "środki", "płatność"] },
+  { phrase: "kliknij tutaj", level: "high", reason: "To najczęściej spamowane CTA w historii e-mail marketingu.", alts: ["przejdź do artykułu", "sprawdź szczegóły", "otwórz raport"] },
+  { phrase: "kup teraz", level: "high", reason: "Agresywne CTA zakupowe — flagowane przez filtry i algorytmy.", alts: ["zamów próbkę", "wypróbuj", "dołącz do programu"] },
+  { phrase: "zamów teraz", level: "high", reason: "Podobnie jak \"kup teraz\" — twardy CTA zakupowy.", alts: ["zarezerwuj miejsce", "złóż zapytanie"] },
+  { phrase: "zadzwoń teraz", level: "high", reason: "Natychmiastowe CTA telefoniczne jest bardzo często spotykane w spamie.", alts: ["umów rozmowę", "skontaktuj się z nami", "zaplanuj konsultację"] },
+  { phrase: "sekret", level: "high", reason: "\"Tajemnice\" i \"sekrety\" to klasyczne haczyki clickbaitowe.", alts: ["sprawdzona metoda", "wypracowane rozwiązanie"] },
+  { phrase: "tajemnica", level: "high", reason: "Jak wyżej — wzbudza nieufność filtrów i odbiorców.", alts: ["know-how", "expertise", "wiedza ekspercka"] },
+  { phrase: "poufne", level: "high", reason: "Paradoksalnie słowo \"poufne\" w masowych mailach podnosi spam score.", alts: ["tylko dla subskrybentów", "materiał wewnętrzny"] },
+  { phrase: "sekretne", level: "high", reason: "Wariant \"sekret\" — identyczne ryzyko.", alts: ["sprawdzone", "autorskie"] },
+  { phrase: "ukryty", level: "high", reason: "Sugestia ukrytej informacji to typowy clickbait spamowy.", alts: ["mniej znany", "niedoceniany", "pomijany w mainstreamie"] },
+
+  // MEDIUM RISK
+  { phrase: "promocja", level: "medium", reason: "Częste słowo, które samodzielnie może nie triggerować, ale w kombinacji z innymi podnosi score.", alts: ["oferta specjalna dla klientów", "propozycja współpracy", "aktualna oferta"] },
+  { phrase: "specjalna promocja", level: "medium", reason: "Połączenie dwóch słów marketingowych — podwójne ryzyko.", alts: ["dostosowana oferta", "indywidualne warunki"] },
+  { phrase: "okazja", level: "medium", reason: "Powiązane z wyprzedażami i impulsywnymi zakupami — umiarkowany sygnał.", alts: ["możliwość", "propozycja", "projekt"] },
+  { phrase: "super okazja", level: "medium", reason: "Wzmocnienie przymiotnikiem podwyższa ryzyko.", alts: ["wyjątkowa propozycja", "atrakcyjne warunki"] },
+  { phrase: "najlepsza oferta", level: "medium", reason: "Superlatiwy w temacie maila są wykrywane jako manipulacyjne.", alts: ["aktualna oferta", "oferta dopasowana do Ciebie"] },
+  { phrase: "natychmiast", level: "medium", reason: "Sygnał pilności — moderowany risk w zależności od kontekstu.", alts: ["niezwłocznie", "w ciągu 24h", "po otrzymaniu"] },
+  { phrase: "teraz", level: "medium", reason: "Samo w sobie niskie ryzyko, ale wzmacnia inne frazy spamowe w tekście.", alts: ["w tym momencie", "aktualnie", "w tej chwili"] },
+  { phrase: "już teraz", level: "medium", reason: "Wzmocnione \"teraz\" — wyższy risk niż samo słowo.", alts: ["od dziś", "już od tej chwili"] },
+  { phrase: "nie przegap", level: "medium", reason: "FOMO marketing — trigger umiarkowany, często stosowany w spamie.", alts: ["zapoznaj się z", "sprawdź kiedy masz chwilę"] },
+  { phrase: "ekskluzywny", level: "medium", reason: "Słowa prestiżu są często używane w spamie premium.", alts: ["dedykowany", "profesjonalny", "certyfikowany"] },
+  { phrase: "elitarny", level: "medium", reason: "Podobnie jak \"ekskluzywny\" — umiarkowany sygnał.", alts: ["specjalistyczny", "zaawansowany"] },
+  { phrase: "VIP", level: "medium", reason: "Akronim statusowy często stosowany w spam ofertach.", alts: ["dla klientów biznesowych", "dla partnera strategicznego"] },
+  { phrase: "ograniczona oferta", level: "medium", reason: "Sztuczna rzadkość — technika manipulacyjna z umiarkowanym ryzykiem.", alts: ["oferta obowiązuje do [data]", "dostępne miejsca: X"] },
+  { phrase: "limitowana oferta", level: "medium", reason: "Jak wyżej — różna forma tej samej techniki.", alts: ["oferta ważna do wyczerpania"] },
+  { phrase: "tylko dla Ciebie", level: "medium", reason: "Fałszywa personalizacja — typowa dla masowych kampanii spam.", alts: ["przygotowane na Twoje potrzeby", "dostosowane do Twojego profilu"] },
+  { phrase: "wyłącznie dziś", level: "medium", reason: "Wariant \"tylko dziś\" — podobne ryzyko.", alts: ["do piątku", "jeszcze w tym tygodniu"] },
+  { phrase: "kończy się", level: "medium", reason: "Sztuczna pilność — umiarkowany risk.", alts: ["termin: [data]", "obowiązuje do końca miesiąca"] },
+  { phrase: "ostatnie godziny", level: "medium", reason: "Intensywna presja czasowa — wyraźny sygnał.", alts: ["czas mija szybko", "termin rejestracji: [data]"] },
+  { phrase: "ostatnie sztuki", level: "medium", reason: "Sztuczna rzadkość towaru.", alts: ["dostępność ograniczona", "pytaj o dostępność"] },
+  { phrase: "wyprzedaż", level: "medium", reason: "Umiarkowany risk — zbyt częste w mailach handlowych.", alts: ["oferta sezonowa", "aktualizacja cennika", "nowe warunki"] },
+  { phrase: "mega rabat", level: "medium", reason: "\"Mega\" jako wzmacniacz podnosi score.", alts: ["rabat X%", "upust dla stałych klientów"] },
+  { phrase: "ogromna zniżka", level: "medium", reason: "Hiperbola cenowa.", alts: ["zniżka Y zł", "korzystniejsze warunki"] },
+  { phrase: "oszczędzaj", level: "medium", reason: "Sam w sobie umiarkowany, ale w kontekście finansowym podnosi score.", alts: ["zoptymalizuj koszty", "efektywniej zarządzaj budżetem"] },
+  { phrase: "oszczędność", level: "medium", reason: "Jak wyżej.", alts: ["redukcja kosztów o X%", "lepsza efektywność kosztowa"] },
+  { phrase: "bonus pieniężny", level: "medium", reason: "Połączenie nagrody z pieniędzmi — podwyższony risk.", alts: ["świadczenie dodatkowe", "premia"] },
+  { phrase: "sprawdź teraz", level: "medium", reason: "Agresywne CTA — umiarkowane ryzyko.", alts: ["dowiedz się więcej", "zapoznaj się z detalami"] },
+  { phrase: "działaj teraz", level: "medium", reason: "Imperatyw z pilnością.", alts: ["następny krok:", "jak zacząć:"] },
+  { phrase: "nie czekaj", level: "medium", reason: "Presja bez kontekstu.", alts: ["zaplanuj z wyprzedzeniem", "zarezerwuj termin"] },
+  { phrase: "koniec oferty", level: "medium", reason: "Presja zakończenia.", alts: ["termin ważności: [data]", "oferta obowiązuje przez 30 dni"] },
+  { phrase: "finalna oferta", level: "medium", reason: "Superlativ końcowy — sygnał manipulacyjny.", alts: ["zaktualizowana propozycja", "ostateczne warunki umowy"] },
+  { phrase: "hit", level: "medium", reason: "Potoczne słowo reklamy masowej.", alts: ["popularny", "chętnie wybierany", "nasz flagowy produkt"] },
+  { phrase: "numer 1", level: "medium", reason: "Nieweryfikowalne twierdzenie — umiarkowany risk.", alts: ["lider branży", "nagrodzony przez [instytucja]", "rekomendowany przez [ekspert]"] },
+  { phrase: "top oferta", level: "medium", reason: "Wzmocnienie oferty przymiotnikiem.", alts: ["oferta premium", "propozycja dla wymagających"] },
+  { phrase: "tylko dla wybranych", level: "medium", reason: "Jak \"tylko dla Ciebie\" — fałszywa ekskluzywność.", alts: ["program partnerski", "oferta B2B"] },
+  { phrase: "specjalnie dla Ciebie", level: "medium", reason: "Fałszywa personalizacja.", alts: ["na podstawie Twojej historii", "przygotowane przez nasz zespół"] },
+  { phrase: "gotówka", level: "medium", reason: "Słowo finansowe bezpośrednie — umiarkowane ryzyko.", alts: ["środki", "rozliczenie", "płatność"] },
+  { phrase: "pieniądze", level: "medium", reason: "Bezpośrednie słowo finansowe.", alts: ["środki finansowe", "budżet", "inwestycja"] },
+  { phrase: "szybki zysk", level: "medium", reason: "Finansowa obietnica z pilnością.", alts: ["efektywny zwrot", "krótki okres zwrotu inwestycji"] },
+  { phrase: "zarabiaj online", level: "medium", reason: "Klasyczny temat spamów o pracy zdalnej.", alts: ["praca zdalna", "możliwości freelance", "projekty online"] },
+  { phrase: "pracuj z domu", level: "medium", reason: "Często spotykane w spamie recruitingowym.", alts: ["praca hybrydowa", "model zdalny", "elastyczne miejsce pracy"] },
+
+  // LOW RISK
+  { phrase: "kliknij", level: "low", reason: "Sam czasownik nie jest problematyczny, ale w kontekście linków podnosi score.", alts: ["przejdź", "otwórz", "sprawdź"] },
+  { phrase: "gwarancja", level: "low", reason: "Słowo gwarancji jest ważne biznesowo, ale w nadmiarze triggeruje filtry.", alts: ["zobowiązanie", "warunki umowy", "SLA"] },
+  { phrase: "gwarantowany", level: "low", reason: "Jak wyżej.", alts: ["potwierdzony", "udokumentowany", "sprawdzony"] },
+  { phrase: "bonus", level: "low", reason: "Sam w sobie niskie ryzyko, ale wzmacnia kontekst ofertowy.", alts: ["dodatek", "uzupełnienie", "benefit"] },
+  { phrase: "dodatkowy bonus", level: "low", reason: "Pleonazm „dodatkowy bonus" może być flagowany.", alts: ["dodatkowy benefit", "plus do oferty"] },
+  { phrase: "nagroda", level: "low", reason: "Niskie ryzyko, ale kojarzone z loteryjnymi scamami.", alts: ["wyróżnienie", "uznanie", "certyfikat"] },
+  { phrase: "prezent", level: "low", reason: "Niskie ryzyko w kontekście okazjonalnym, umiarkowane w sprzedażowym.", alts: ["niespodziana dla Ciebie", "upominek okolicznościowy"] },
+  { phrase: "darmowa dostawa", level: "low", reason: "Konkretna informacja logistyczna — niskie ryzyko, ale podnosi score e-commerce.", alts: ["dostawa w cenie", "koszt dostawy: 0 zł", "bezpłatna wysyłka powyżej X zł"] },
+  { phrase: "bez opłat", level: "low", reason: "Niskie ryzyko samo w sobie.", alts: ["bez dodatkowych kosztów", "w ramach abonamentu"] },
+  { phrase: "bez kosztów", level: "low", reason: "Podobnie jak wyżej.", alts: ["wliczone w cenę", "objęte umową"] },
+  { phrase: "bez zobowiązań", level: "low", reason: "Stosowany w legitnych ofertach testowych — niskie ryzyko.", alts: ["możesz zrezygnować w każdej chwili", "bez minimalnego okresu"] },
+  { phrase: "zarabiaj", level: "low", reason: "Słowo zarobku w izolacji — niskie ryzyko.", alts: ["generuj przychód", "zwiększ marżę", "rozwijaj działalność"] },
+  { phrase: "zarobek", level: "low", reason: "Jak wyżej.", alts: ["przychód", "wynagrodzenie", "dochód"] },
+  { phrase: "dochód", level: "low", reason: "Neutralne słowo finansowe — niskie ryzyko solo.", alts: ["przychód", "wpływy", "wyniki finansowe"] },
+  { phrase: "pasywny dochód", level: "low", reason: "Fraza kojarzona z MLM i spamem, ale coraz częstsza w legalnych kontekstach.", alts: ["dochód z inwestycji", "przychód pasywny (np. dywidendy)"] },
+  { phrase: "-50%", level: "low", reason: "Procenty rabatowe podnoszą score — sam w sobie niski risk.", alts: ["obniżka o połowę", "50 zł zniżki"] },
+  { phrase: "-90%", level: "low", reason: "Wysoki procent rabatu — podejrzany dla filtrów.", alts: ["oferta wyjątkowa", "cena premiowa"] },
+  { phrase: "bestseller", level: "low", reason: "Nieweryfikowalne — niskie ryzyko, ale wzmacnia kontekst reklamowy.", alts: ["chętnie wybierany", "polecany przez klientów"] },
+  { phrase: "dowiedz się więcej", level: "low", reason: "Popularne CTA, niski risk, ale warto go urozmaicać.", alts: ["poznaj szczegóły", "przeczytaj case study", "obejrzyj demo"] },
+  { phrase: "zobacz więcej", level: "low", reason: "Jak wyżej.", alts: ["zajrzyj do portfolio", "przejdź do dokumentacji"] },
+  { phrase: "kliknij i sprawdź", level: "low", reason: "Podwójne CTA — lekko podnosi score.", alts: ["szczegóły w załączniku", "pełna oferta na stronie"] },
+  { phrase: "ostatnie godziny", level: "medium", reason: "Duplikat — sprawdź listę medium.", alts: [] },
+];
+
+// Deduplicate (remove last duplicate)
+const seen = new Set();
+const SPAM_WORDS = SPAM_DICT.filter(e => {
+  if (seen.has(e.phrase)) return false;
+  seen.add(e.phrase);
+  return true;
+});
+
+// Sort by phrase length desc so longer phrases match first
+SPAM_WORDS.sort((a, b) => b.phrase.length - a.phrase.length);
+
+// ─── State ──────────────────────────────────────────────────────────────────────
+let lastResults = [];
+
+// ─── Analyze ───────────────────────────────────────────────────────────────────
+function analyze(text) {
+  const lower = text.toLowerCase();
+  const hits = [];
+  const matchedRanges = [];
+
+  for (const entry of SPAM_WORDS) {
+    const phrase = entry.phrase.toLowerCase();
+    let idx = 0;
+    while ((idx = lower.indexOf(phrase, idx)) !== -1) {
+      const end = idx + phrase.length;
+      // Avoid overlapping matches
+      const overlaps = matchedRanges.some(([s, e]) => idx < e && end > s);
+      if (!overlaps) {
+        matchedRanges.push([idx, end]);
+        // Add to hits if not already
+        if (!hits.find(h => h.phrase === entry.phrase)) {
+          hits.push({ ...entry, count: 0 });
+        }
+        hits.find(h => h.phrase === entry.phrase).count++;
+      }
+      idx = end;
+    }
+  }
+
+  return { hits, ranges: matchedRanges };
+}
+
+function calcScore(hits) {
+  let score = 0;
+  for (const h of hits) {
+    if (h.level === 'high') score += 15 * h.count;
+    else if (h.level === 'medium') score += 7 * h.count;
+    else score += 3 * h.count;
+  }
+  return Math.min(score, 100);
+}
+
+function getRisk(score) {
+  if (score === 0) return 'none';
+  if (score <= 20) return 'low';
+  if (score <= 55) return 'medium';
+  return 'high';
+}
+
+function getRiskLabel(risk) {
+  return { none: 'Brak ryzyka', low: 'Niski risk', medium: 'Średni risk', high: 'Wysoki risk' }[risk];
+}
+
+function getScoreComment(score, risk, count) {
+  if (risk === 'none') return 'Świetnie! Brak wykrytych fraz spamowych.';
+  if (risk === 'low') return `Wykryto ${count} frazę(y) niskiego ryzyka. Warto rozważyć poprawki.`;
+  if (risk === 'medium') return `Znaleziono ${count} problematycznych fraz. Zalecana korekta przed wysyłką.`;
+  return `Wysoki spam score (${score}/100). Koniecznie przepisz zaznaczone fragmenty!`;
+}
+
+// ─── Highlight ─────────────────────────────────────────────────────────────────
+function buildHighlight(text, hits) {
+  if (!hits.length) return escapeHtml(text);
+
+  const lower = text.toLowerCase();
+  const markers = [];
+
+  for (const h of hits) {
+    const phrase = h.phrase.toLowerCase();
+    let idx = 0;
+    while ((idx = lower.indexOf(phrase, idx)) !== -1) {
+      markers.push({ start: idx, end: idx + phrase.length, level: h.level });
+      idx += phrase.length;
+    }
+  }
+
+  // Sort and remove overlaps
+  markers.sort((a, b) => a.start - b.start);
+  const filtered = [];
+  let lastEnd = 0;
+  for (const m of markers) {
+    if (m.start >= lastEnd) { filtered.push(m); lastEnd = m.end; }
+  }
+
+  let result = '';
+  let pos = 0;
+  for (const m of filtered) {
+    result += escapeHtml(text.slice(pos, m.start));
+    result += `<mark class="level-${m.level}">${escapeHtml(text.slice(m.start, m.end))}</mark>`;
+    pos = m.end;
+  }
+  result += escapeHtml(text.slice(pos));
+  return result;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Render ────────────────────────────────────────────────────────────────────
+function renderResults(hits, score) {
+  const risk = getRisk(score);
+
+  // Ring
+  const ring = document.getElementById('ringFill');
+  const pct = score / 100;
+  const circ = 251.2;
+  ring.style.strokeDashoffset = circ - (circ * pct);
+  const strokeColor = { none: '#7a7a90', low: '#47ff9a', medium: '#ffb347', high: '#ff4747' }[risk];
+  ring.style.stroke = strokeColor;
+
+  // Score number
+  document.getElementById('scoreNumber').textContent = score;
+  document.getElementById('scoreMax').textContent = '/ 100';
+
+  // Risk label
+  const rl = document.getElementById('riskLabel');
+  rl.className = `risk-label risk-${risk}`;
+  rl.textContent = getRiskLabel(risk);
+
+  // Comment
+  document.getElementById('scoreComment').textContent = getScoreComment(score, risk, hits.length);
+
+  // Stats
+  const high = hits.filter(h => h.level === 'high').length;
+  const med = hits.filter(h => h.level === 'medium').length;
+  const low = hits.filter(h => h.level === 'low').length;
+  document.getElementById('statHigh').textContent = high;
+  document.getElementById('statMedium').textContent = med;
+  document.getElementById('statLow').textContent = low;
+
+  // Hits list
+  const section = document.getElementById('hitsSection');
+  const empty = document.getElementById('hitsEmpty');
+
+  if (!hits.length) {
+    section.innerHTML = '';
+    section.appendChild(empty);
+    empty.style.display = 'block';
+    empty.textContent = '✓ Brak wykrytych fraz spamowych.';
+    return;
+  }
+
+  // Sort: high first
+  const order = { high: 0, medium: 1, low: 2 };
+  hits.sort((a, b) => order[a.level] - order[b.level]);
+
+  section.innerHTML = '<div class="hits-title">Wykryte problemy</div>';
+
+  for (const h of hits) {
+    const div = document.createElement('div');
+    div.className = `hit-item level-${h.level}`;
+    const levelNames = { high: 'Wysoki', medium: 'Średni', low: 'Niski' };
+    const altsHtml = h.alts && h.alts.length
+      ? `<div class="alt-label">💡 Zamienniki:</div><div class="hit-alternatives">${h.alts.map(a => `<span class="alt-tag" title="Kliknij, aby skopiować">${a}</span>`).join('')}</div>`
+      : '';
+    div.innerHTML = `
+      <div class="hit-top">
+        <span class="hit-phrase">"${h.phrase}"${h.count > 1 ? ` ×${h.count}` : ''}</span>
+        <span class="hit-badge level-${h.level}">${levelNames[h.level]}</span>
+      </div>
+      <div class="hit-reason">${h.reason}</div>
+      ${altsHtml}
+    `;
+    section.appendChild(div);
+  }
+
+  // Copy alt on click
+  section.querySelectorAll('.alt-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      navigator.clipboard.writeText(tag.textContent).then(() => {
+        const orig = tag.textContent;
+        tag.textContent = '✓ Skopiowano';
+        setTimeout(() => { tag.textContent = orig; }, 1200);
+      });
+    });
+  });
+}
+
+// ─── Events ────────────────────────────────────────────────────────────────────
+const textarea = document.getElementById('emailInput');
+const highlightLayer = document.getElementById('highlightLayer');
+
+textarea.addEventListener('input', () => {
+  document.getElementById('charCount').textContent = textarea.value.length + ' znaków';
+  // Live highlight if already analyzed
+  if (lastResults.length || textarea.value === '') {
+    const { hits } = analyze(textarea.value);
+    highlightLayer.innerHTML = buildHighlight(textarea.value, hits);
+  }
+  syncScroll();
+});
+
+textarea.addEventListener('scroll', syncScroll);
+
+function syncScroll() {
+  highlightLayer.scrollTop = textarea.scrollTop;
+  highlightLayer.scrollLeft = textarea.scrollLeft;
+}
+
+document.getElementById('analyzeBtn').addEventListener('click', () => {
+  const text = textarea.value.trim();
+  if (!text) return;
+  const { hits } = analyze(text);
+  lastResults = hits;
+  const score = calcScore(hits);
+  highlightLayer.innerHTML = buildHighlight(textarea.value, hits);
+  renderResults(hits, score);
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  textarea.value = '';
+  highlightLayer.innerHTML = '';
+  lastResults = [];
+  document.getElementById('charCount').textContent = '0 znaków';
+  document.getElementById('scoreNumber').textContent = '—';
+  document.getElementById('scoreMax').textContent = '';
+  const rl = document.getElementById('riskLabel');
+  rl.className = 'risk-label risk-none';
+  rl.textContent = 'Brak analizy';
+  document.getElementById('scoreComment').textContent = 'Wklej treść e-maila i kliknij „Analizuj".';
+  document.getElementById('statHigh').textContent = '0';
+  document.getElementById('statMedium').textContent = '0';
+  document.getElementById('statLow').textContent = '0';
+  document.getElementById('ringFill').style.strokeDashoffset = '251.2';
+  document.getElementById('ringFill').style.stroke = '#7a7a90';
+  const section = document.getElementById('hitsSection');
+  section.innerHTML = '<div class="hits-empty" id="hitsEmpty">Uruchom analizę, aby zobaczyć wyniki.</div>';
+});
+
+// Enter key in textarea shouldn't submit
+textarea.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.ctrlKey) {
+    document.getElementById('analyzeBtn').click();
+  }
+});
+</script>
+</body>
+</html>
