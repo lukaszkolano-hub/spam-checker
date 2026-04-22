@@ -835,16 +835,24 @@ function renderResults(hits, score) {
   // Copy alt on click
   section.querySelectorAll('.alt-tag').forEach(tag => {
     tag.addEventListener('click', () => {
-      navigator.clipboard.writeText(tag.textContent).then(() => {
-        const orig = tag.textContent;
-        tag.textContent = '✓ Skopiowano';
-        setTimeout(() => { tag.textContent = orig; }, 1200);
-      });
+      const orig = tag.textContent;
+      try {
+        const el = document.createElement('textarea');
+        el.value = orig;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      } catch(e) {}
+      tag.textContent = '✓ Skopiowano';
+      setTimeout(() => { tag.textContent = orig; }, 1200);
     });
   });
 }
 
 // ─── Events ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+
 const textarea = document.getElementById('emailInput');
 const highlightLayer = document.getElementById('highlightLayer');
 
@@ -901,6 +909,8 @@ textarea.addEventListener('keydown', e => {
     document.getElementById('analyzeBtn').click();
   }
 });
+
+}); // end DOMContentLoaded
 </script>
 </body>
 </html>
