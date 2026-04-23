@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spam Checker — Email & SMS</title>
+<title>QA Checker — Email & SMS</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
@@ -16,7 +16,7 @@
     --accent: #e8ff47;
     --accent3: #47cfff;
     --text: #f0f0ff;
-    --text-muted: ##9f9fcf;
+    --text-muted: #8888b8;
     --low: #3fffa0;
     --medium: #ffb347;
     --high: #ff5050;
@@ -462,6 +462,50 @@
 
   .alt-tag:hover { background: rgba(71,207,255,0.14); border-color: var(--accent3); }
   .hits-empty { text-align: center; padding: 24px; color: var(--text-muted); font-size: 12px; }
+
+  /* ── Layout Checker ── */
+  .layout-panel { padding: 16px; }
+  .layout-font-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+  .layout-font-row label { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  .font-input { width: 64px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 7px; padding: 5px 10px; font-family: 'Space Mono', monospace; font-size: 13px; color: var(--text); outline: none; text-align: center; transition: border-color 0.15s; }
+  .font-input:focus { border-color: var(--accent); }
+  .font-unit { font-size: 12px; color: var(--text-muted); }
+  .layout-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .layout-item { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 9px; padding: 10px 13px; gap: 10px; transition: border-color 0.15s, background 0.15s; cursor: pointer; }
+  .layout-item:hover { border-color: rgba(255,255,255,0.2); }
+  .layout-item.checked { background: rgba(232,255,71,0.05); border-color: rgba(232,255,71,0.25); }
+  .layout-item-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+  .layout-cb { width: 17px; height: 17px; border: 2px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; background: transparent; }
+  .layout-item.checked .layout-cb { background: var(--accent); border-color: var(--accent); }
+  .layout-cb-tick { color: #0f0f18; font-size: 11px; font-weight: 900; display: none; }
+  .layout-item.checked .layout-cb-tick { display: block; }
+  .layout-item-info { flex: 1; }
+  .layout-item-name { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.2; }
+  .layout-item-dims { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+  .layout-item-area { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+  .layout-item.checked .layout-item-area { color: var(--accent); }
+  .logo-counter { display: flex; align-items: center; gap: 6px; }
+  .logo-count-btn { width: 24px; height: 24px; border-radius: 6px; background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: var(--text); font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; padding: 0; flex-shrink: 0; }
+  .logo-count-btn:hover { background: rgba(255,255,255,0.14); border-color: var(--accent); color: var(--accent); }
+  .logo-count-val { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text); min-width: 18px; text-align: center; }
+  .prop-section { padding-top: 14px; border-top: 1px solid var(--border); }
+  .prop-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .prop-title { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); }
+  .prop-verdict { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; padding: 3px 10px; border-radius: 10px; }
+  .prop-verdict.ok { background: var(--low-bg); color: var(--low); border: 1px solid var(--low-border); }
+  .prop-verdict.warn { background: var(--medium-bg); color: var(--medium); border: 1px solid var(--medium-border); }
+  .prop-verdict.bad { background: var(--high-bg); color: var(--high); border: 1px solid var(--high-border); }
+  .prop-verdict.na { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+  .prop-bar-wrap { height: 22px; border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.06); display: flex; margin-bottom: 8px; position: relative; }
+  .prop-bar-text { background: var(--accent3); height: 100%; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-size: 10px; color: #0a1a2a; font-weight: 700; overflow: hidden; white-space: nowrap; min-width: 0; }
+  .prop-bar-img { background: rgba(232,255,71,0.45); height: 100%; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-size: 10px; color: #0f0f18; font-weight: 700; overflow: hidden; white-space: nowrap; min-width: 0; }
+  .prop-target-line { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.35); left: 60%; pointer-events: none; }
+  .prop-details { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
+  .prop-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .prop-areas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .prop-area-box { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
+  .prop-area-box .pval { font-family: 'Space Mono', monospace; font-size: 14px; font-weight: 700; line-height: 1; }
+  .prop-area-box .plbl { font-size: 10px; color: var(--text-muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
 </style>
 </head>
 <body>
@@ -469,7 +513,7 @@
 
   <header>
     <div class="header-left">
-      <h1>Spam Checker</h1>
+      <h1>QA Checker</h1>
       <p>Weryfikuj tresc przed wysylka — spam score, GSM-7, limity znakow</p>
     </div>
     <div class="badge-version">v2.0 · PL</div>
@@ -508,6 +552,87 @@
       </div>
 
       <div style="display:flex;flex-direction:column;gap:16px;">
+
+        <!-- Layout checker -->
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Proporcje Tekst / Grafika</span></div>
+          <div class="layout-panel">
+
+            <div class="layout-font-row">
+              <label>Rozmiar fontu:</label>
+              <input class="font-input" type="number" id="fontSizePx" value="14" min="8" max="48">
+              <span class="font-unit">px</span>
+              <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">/ szer. 600px</span>
+            </div>
+
+            <div class="layout-items">
+              <div class="layout-item" id="li-banner-top" onclick="toggleLayout('banner-top')">
+                <div class="layout-item-left">
+                  <div class="layout-cb"><span class="layout-cb-tick">&#10003;</span></div>
+                  <div class="layout-item-info">
+                    <div class="layout-item-name">Banner glowny</div>
+                    <div class="layout-item-dims">600 x 250 px</div>
+                  </div>
+                </div>
+                <div class="layout-item-area" id="area-banner-top">150 000 px2</div>
+              </div>
+
+              <div class="layout-item" id="li-banner-bot" onclick="toggleLayout('banner-bot')">
+                <div class="layout-item-left">
+                  <div class="layout-cb"><span class="layout-cb-tick">&#10003;</span></div>
+                  <div class="layout-item-info">
+                    <div class="layout-item-name">Banner dolny</div>
+                    <div class="layout-item-dims">600 x 150 px</div>
+                  </div>
+                </div>
+                <div class="layout-item-area" id="area-banner-bot">90 000 px2</div>
+              </div>
+
+              <div class="layout-item" id="li-logos" onclick="toggleLayout('logos')">
+                <div class="layout-item-left">
+                  <div class="layout-cb"><span class="layout-cb-tick">&#10003;</span></div>
+                  <div class="layout-item-info">
+                    <div class="layout-item-name">Loga / wstawki</div>
+                    <div class="layout-item-dims">~150 x 150 px / szt.</div>
+                  </div>
+                </div>
+                <div class="logo-counter" onclick="event.stopPropagation()">
+                  <button class="logo-count-btn" onclick="changeLogoCount(-1)">-</button>
+                  <span class="logo-count-val" id="logoCountVal">1</span>
+                  <button class="logo-count-btn" onclick="changeLogoCount(1)">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="prop-section">
+              <div class="prop-label-row">
+                <span class="prop-title">Proporcje</span>
+                <span class="prop-verdict na" id="propVerdict">brak danych</span>
+              </div>
+              <div class="prop-bar-wrap">
+                <div class="prop-bar-text" id="propBarText" style="width:0%"></div>
+                <div class="prop-bar-img" id="propBarImg" style="width:0%"></div>
+                <div class="prop-target-line" title="Cel: 60% tekst"></div>
+              </div>
+              <div class="prop-details">
+                <span><span class="prop-dot" style="background:var(--accent3)"></span>Tekst: <span id="propTextPct" style="margin-left:3px;color:var(--text)">-</span></span>
+                <span><span class="prop-dot" style="background:rgba(232,255,71,0.6)"></span>Grafika: <span id="propImgPct" style="margin-left:3px;color:var(--text)">-</span></span>
+              </div>
+              <div class="prop-areas">
+                <div class="prop-area-box">
+                  <div class="pval" id="propTextArea" style="color:var(--accent3)">-</div>
+                  <div class="plbl">Tekst (px2)</div>
+                </div>
+                <div class="prop-area-box">
+                  <div class="pval" id="propImgArea" style="color:var(--accent)">-</div>
+                  <div class="plbl">Grafika (px2)</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
         <div class="panel">
           <div class="panel-header"><span class="panel-title">Spam Score</span></div>
           <div class="score-display">
@@ -1043,6 +1168,117 @@ document.getElementById('emailClearBtn').addEventListener('click', function() {
 emailInput.addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && e.ctrlKey) document.getElementById('emailAnalyzeBtn').click();
 });
+
+// also recalc layout when text changes
+emailInput.addEventListener('input', function() { calcLayout(); });
+
+// ── Layout Checker ────────────────────────────────────────────────────────────
+var MAIL_WIDTH = 600;
+var BANNER_W = 600, BANNER_H = 250;
+var BANNER_BOT_W = 600, BANNER_BOT_H = 150;
+var LOGO_W = 150, LOGO_H = 150;
+var LINE_HEIGHT_FACTOR = 1.5;
+
+var layoutState = { 'banner-top': false, 'banner-bot': false, 'logos': false };
+var logoCount = 1;
+
+window.toggleLayout = function(key) {
+  layoutState[key] = !layoutState[key];
+  var el = document.getElementById('li-' + key);
+  el.classList.toggle('checked', layoutState[key]);
+  calcLayout();
+};
+
+window.changeLogoCount = function(delta) {
+  logoCount = Math.max(0, Math.min(20, logoCount + delta));
+  document.getElementById('logoCountVal').textContent = logoCount;
+  // auto-check logos if count > 0
+  if (logoCount > 0 && !layoutState['logos']) {
+    layoutState['logos'] = true;
+    document.getElementById('li-logos').classList.add('checked');
+  }
+  if (logoCount === 0 && layoutState['logos']) {
+    layoutState['logos'] = false;
+    document.getElementById('li-logos').classList.remove('checked');
+  }
+  calcLayout();
+};
+
+function calcLayout() {
+  var fontPx = parseInt(document.getElementById('fontSizePx').value) || 14;
+  var text = document.getElementById('emailInput').value;
+
+  // Text area: estimate lines from chars, width=600px, avg char width ~0.55*fontPx
+  var avgCharW = fontPx * 0.55;
+  var charsPerLine = Math.max(1, Math.floor(MAIL_WIDTH / avgCharW));
+  var lines = 0;
+  var rawLines = text.split('\n');
+  for (var i = 0; i < rawLines.length; i++) {
+    lines += Math.max(1, Math.ceil(rawLines[i].length / charsPerLine));
+  }
+  if (lines === 0) lines = 0;
+  var lineHeightPx = fontPx * LINE_HEIGHT_FACTOR;
+  var textH = lines * lineHeightPx;
+  var textArea = Math.round(MAIL_WIDTH * textH);
+
+  // Image area
+  var imgArea = 0;
+  if (layoutState['banner-top']) imgArea += BANNER_W * BANNER_H;
+  if (layoutState['banner-bot']) imgArea += BANNER_BOT_W * BANNER_BOT_H;
+  if (layoutState['logos']) imgArea += logoCount * LOGO_W * LOGO_H;
+
+  var total = textArea + imgArea;
+
+  if (total === 0 || text.trim() === '') {
+    document.getElementById('propVerdict').textContent = 'brak danych';
+    document.getElementById('propVerdict').className = 'prop-verdict na';
+    document.getElementById('propBarText').style.width = '0%';
+    document.getElementById('propBarImg').style.width = '0%';
+    document.getElementById('propBarText').textContent = '';
+    document.getElementById('propBarImg').textContent = '';
+    document.getElementById('propTextPct').textContent = '-';
+    document.getElementById('propImgPct').textContent = '-';
+    document.getElementById('propTextArea').textContent = '-';
+    document.getElementById('propImgArea').textContent = '-';
+    return;
+  }
+
+  var textPct = Math.round(textArea / total * 100);
+  var imgPct = 100 - textPct;
+
+  document.getElementById('propBarText').style.width = textPct + '%';
+  document.getElementById('propBarImg').style.width = imgPct + '%';
+  document.getElementById('propBarText').textContent = textPct > 8 ? textPct + '%' : '';
+  document.getElementById('propBarImg').textContent = imgPct > 8 ? imgPct + '%' : '';
+  document.getElementById('propTextPct').textContent = textPct + '%';
+  document.getElementById('propImgPct').textContent = imgPct + '%';
+  document.getElementById('propTextArea').textContent = formatArea(textArea);
+  document.getElementById('propImgArea').textContent = formatArea(imgArea);
+
+  var verdict = document.getElementById('propVerdict');
+  if (textPct >= 55 && textPct <= 70) {
+    verdict.textContent = 'OK 60/40';
+    verdict.className = 'prop-verdict ok';
+  } else if (textPct >= 45 && textPct < 55) {
+    verdict.textContent = 'Za duzo grafiki';
+    verdict.className = 'prop-verdict warn';
+  } else if (textPct > 70) {
+    verdict.textContent = 'Malo grafiki';
+    verdict.className = 'prop-verdict warn';
+  } else {
+    verdict.textContent = 'Przekroczono 60/40';
+    verdict.className = 'prop-verdict bad';
+  }
+}
+
+function formatArea(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(2) + ' Mpx';
+  if (n >= 1000) return Math.round(n / 1000) + 'k px';
+  return n + ' px';
+}
+
+document.getElementById('fontSizePx').addEventListener('input', calcLayout);
+calcLayout();
 
 // SMS
 var smsInput = document.getElementById('smsInput');
